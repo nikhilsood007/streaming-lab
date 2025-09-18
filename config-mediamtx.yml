@@ -1,0 +1,77 @@
+# MediaMTX Configuration
+# Documentation: https://github.com/bluenviron/mediamtx
+
+# General settings
+logLevel: info
+logDestinations: [stdout]
+logFile: ""
+
+# API settings
+api: yes
+apiAddress: 0.0.0.0:9997
+
+# Metrics settings (Prometheus compatible)
+metrics: yes
+metricsAddress: 0.0.0.0:9998
+
+# RTMP server settings
+rtmp: yes
+rtmpAddress: 0.0.0.0:1935
+rtmpEncryption: no
+
+# RTSP server settings
+rtsp: yes
+rtspAddress: 0.0.0.0:8554
+rtspTCPOnly: no
+rtspAllowOrigin: "*"
+
+# HLS server settings
+hls: yes
+hlsAddress: 0.0.0.0:8888
+hlsAllowOrigin: "*"
+hlsAlwaysRemux: no
+hlsVariant: mpegts
+hlsSegmentCount: 3
+hlsSegmentDuration: 1s
+
+# WebRTC server settings
+webrtc: yes
+webrtcAddress: 0.0.0.0:8889
+webrtcAllowOrigin: "*"
+
+# Path settings
+paths:
+  # Default catch-all path
+  all:
+    # Accept RTMP publishes
+    rtmpPublish: yes
+    # Allow RTSP/HLS/WebRTC readers
+    rtspRead: yes
+    hlsRead: yes
+    webrtcRead: yes
+    
+    # Recording settings (optional)
+    record: no
+    
+  # Specific path for our test streams
+  live:
+    rtmpPublish: yes
+    rtspRead: yes
+    hlsRead: yes
+    webrtcRead: yes
+    
+    # Run on publish hooks (optional)
+    runOnPublish: ""
+    runOnUnPublish: ""
+    
+    # Authentication (disabled for lab)
+    publishUser: ""
+    publishPass: ""
+    publishIPs: []
+    
+  # Test pattern path
+  test:
+    rtmpPublish: yes
+    rtspRead: yes
+    hlsRead: yes
+    webrtcRead: yes

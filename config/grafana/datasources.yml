@@ -1,0 +1,52 @@
+# Grafana Datasources Provisioning
+# Documentation: https://grafana.com/docs/grafana/latest/administration/provisioning/
+
+apiVersion: 1
+
+datasources:
+  # Prometheus data source
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      cacheLevel: 'High'
+      disableMetricsLookup: false
+      incrementalQuerying: false
+      incrementalQueryOverlapWindow: 10m
+
+  # Example Datadog datasource (requires plugin and API key)
+  # Uncomment and configure if using Grafana Cloud/Enterprise
+  # - name: Datadog
+  #   type: datadog
+  #   access: proxy
+  #   url: https://api.datadoghq.com
+  #   jsonData:
+  #     site: datadoghq.com
+  #   secureJsonData:
+  #     apiKey: YOUR_DATADOG_API_KEY
+  #     appKey: YOUR_DATADOG_APP_KEY
+
+  # JSON API datasource for custom integrations (e.g., Datadog REST API)
+  # Requires marcusolsson-json-datasource plugin
+  # - name: Datadog-JSON
+  #   type: marcusolsson-json-datasource
+  #   access: proxy
+  #   url: https://api.datadoghq.com/api/v1
+  #   jsonData:
+  #     queryParams: 'api_key=YOUR_API_KEY&application_key=YOUR_APP_KEY'
+  #   secureJsonData:
+  #     apiKey: YOUR_DATADOG_API_KEY
+
+  # TestData source for demo purposes
+  - name: TestData
+    type: testdata
+    access: proxy
+    isDefault: false
+    editable: true

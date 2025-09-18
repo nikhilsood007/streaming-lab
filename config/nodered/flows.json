@@ -1,0 +1,418 @@
+[
+    {
+        "id": "streaming-tab",
+        "type": "tab",
+        "label": "Streaming Scheduler",
+        "disabled": false,
+        "info": "Automated FFmpeg streaming scheduler with cron-based timing"
+    },
+    {
+        "id": "testsrc-flow",
+        "type": "subflow",
+        "name": "Test Pattern Stream Flow",
+        "info": "Scheduled test pattern streaming with FFmpeg",
+        "category": "streaming",
+        "in": [
+            {
+                "x": 40,
+                "y": 40,
+                "wires": [{"id": "testsrc-exec"}]
+            }
+        ],
+        "out": [
+            {
+                "x": 560,
+                "y": 40,
+                "wires": [{"id": "testsrc-exec", "port": 0}]
+            }
+        ]
+    },
+    {
+        "id": "cron-scheduler",
+        "type": "cronplus",
+        "z": "streaming-tab",
+        "name": "Stream Scheduler",
+        "outputField": "payload",
+        "timeZone": "Europe/London",
+        "persistDynamic": false,
+        "commandResponseMsgOutput": "output1",
+        "outputs": 1,
+        "options": [
+            {
+                "name": "morning-stream",
+                "topic": "start-testsrc",
+                "payloadType": "str",
+                "payload": "start",
+                "expressionType": "cron",
+                "expression": "0 9 * * *",
+                "location": "",
+                "offset": "0",
+                "solarType": "all",
+                "solarEvents": "sunrise,sunset"
+            },
+            {
+                "name": "evening-stream",
+                "topic": "start-file",
+                "payloadType": "str",
+                "payload": "start",
+                "expressionType": "cron",
+                "expression": "0 18 * * *",
+                "location": "",
+                "offset": "0",
+                "solarType": "all",
+                "solarEvents": "sunrise,sunset"
+            },
+            {
+                "name": "stop-streams",
+                "topic": "stop",
+                "payloadType": "str",
+                "payload": "stop",
+                "expressionType": "cron",
+                "expression": "0 10,19 * * *",
+                "location": "",
+                "offset": "0",
+                "solarType": "all",
+                "solarEvents": "sunrise,sunset"
+            }
+        ],
+        "x": 140,
+        "y": 100,
+        "wires": [["router-node"]]
+    },
+    {
+        "id": "router-node",
+        "type": "switch",
+        "z": "streaming-tab",
+        "name": "Route Commands",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "start-testsrc",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "start-file",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "stop",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "manual-start",
+                "vt": "str"
+            }
+        ],
+        "checkall": "false",
+        "repair": false,
+        "outputs": 4,
+        "x": 340,
+        "y": 100,
+        "wires": [
+            ["testsrc-stream"],
+            ["file-stream"],
+            ["stop-stream"],
+            ["manual-stream"]
+        ]
+    },
+    {
+        "id": "testsrc-stream",
+        "type": "function",
+        "z": "streaming-tab",
+        "name": "Prepare Test Stream",
+        "func": "msg.payload = {\n    duration: 3600,\n    stream_key: 'live/test',\n    input_source: 'testsrc',\n    bitrate: '1000k',\n    resolution: '1280x720'\n};\n\nmsg.command = `/scripts/start_stream.sh ${msg.payload.duration} ${msg.payload.stream_key} ${msg.payload.input_source}`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 60,
+        "wires": [["exec-start"]]
+    },
+    {
+        "id": "file-stream",
+        "type": "function",
+        "z": "streaming-tab",
+        "name": "Prepare File Stream",
+        "func": "msg.payload = {\n    duration: 3600,\n    stream_key: 'live/stream',\n    input_source: 'sample.mp4',\n    bitrate: '2000k',\n    resolution: '1920x1080'\n};\n\n// Set environment variables for the script\nmsg.env = {\n    BITRATE: msg.payload.bitrate,\n    RESOLUTION: msg.payload.resolution\n};\n\nmsg.command = `/scripts/start_stream.sh ${msg.payload.duration} ${msg.payload.stream_key} ${msg.payload.input_source}`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 100,
+        "wires": [["exec-start"]]
+    },
+    {
+        "id": "stop-stream",
+        "type": "function",
+        "z": "streaming-tab",
+        "name": "Prepare Stop Command",
+        "func": "msg.command = '/scripts/stop_stream.sh';\nmsg.payload = 'stop';\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 140,
+        "wires": [["exec-stop"]]
+    },
+    {
+        "id": "manual-stream",
+        "type": "function",
+        "z": "streaming-tab",
+        "name": "Manual Stream Setup",
+        "func": "// Extract parameters from input\nconst params = msg.payload || {};\n\nmsg.payload = {\n    duration: params.duration || 300,\n    stream_key: params.stream_key || 'live/manual',\n    input_source: params.input_source || 'testsrc',\n    bitrate: params.bitrate || '1500k',\n    resolution: params.resolution || '1280x720'\n};\n\nmsg.command = `/scripts/start_stream.sh ${msg.payload.duration} ${msg.payload.stream_key} ${msg.payload.input_source}`;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 180,
+        "wires": [["exec-start"]]
+    },
+    {
+        "id": "exec-start",
+        "type": "exec",
+        "z": "streaming-tab",
+        "command": "",
+        "addpay": "command",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "Execute Start Stream",
+        "x": 790,
+        "y": 100,
+        "wires": [
+            ["stream-status", "log-output"],
+            ["error-handler"],
+            ["completion-handler"]
+        ]
+    },
+    {
+        "id": "exec-stop",
+        "type": "exec",
+        "z": "streaming-tab",
+        "command": "",
+        "addpay": "command",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "Execute Stop Stream",
+        "x": 790,
+        "y": 140,
+        "wires": [
+            ["stream-status", "log-output"],
+            ["error-handler"],
+            ["completion-handler"]
+        ]
+    },
+    {
+        "id": "stream-status",
+        "type": "function",
+        "z": "streaming-tab",
+        "name": "Update Stream Status",
+        "func": "// Store stream status in global context\nconst streams = global.get('active_streams') || {};\nconst timestamp = new Date().toISOString();\n\nif (msg.topic === 'start-testsrc' || msg.topic === 'start-file' || msg.topic === 'manual-start') {\n    streams[msg.payload.stream_key || 'unknown'] = {\n        status: 'starting',\n        started: timestamp,\n        type: msg.payload.input_source || 'unknown',\n        duration: msg.payload.duration || 0\n    };\n} else if (msg.topic === 'stop') {\n    // Mark all streams as stopped\n    Object.keys(streams).forEach(key => {\n        if (streams[key].status === 'running' || streams[key].status === 'starting') {\n            streams[key].status = 'stopped';\n            streams[key].stopped = timestamp;\n        }\n    });\n}\n\nglobal.set('active_streams', streams);\n\n// Prepare output message\nmsg.payload = {\n    active_streams: streams,\n    timestamp: timestamp\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1020,
+        "y": 80,
+        "wires": [["status-debug"]]
+    },
+    {
+        "id": "log-output",
+        "type": "debug",
+        "z": "streaming-tab",
+        "name": "Stream Logs",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1010,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "error-handler",
+        "type": "function",
+        "z": "streaming-tab",
+        "name": "Handle Errors",
+        "func": "if (msg.payload.code !== 0) {\n    msg.payload = {\n        error: true,\n        code: msg.payload.code,\n        stderr: msg.payload.stderr || msg.payload,\n        timestamp: new Date().toISOString()\n    };\n    \n    node.status({fill: \"red\", shape: \"dot\", text: \"Stream error\"});\n} else {\n    node.status({fill: \"green\", shape: \"dot\", text: \"Stream OK\"});\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1020,
+        "y": 160,
+        "wires": [["error-debug"]]
+    },
+    {
+        "id": "completion-handler",
+        "type": "function",
+        "z": "streaming-tab",
+        "name": "Handle Completion",
+        "func": "msg.payload = {\n    completed: true,\n    return_code: msg.payload.code || 0,\n    timestamp: new Date().toISOString()\n};\n\nnode.status({fill: \"blue\", shape: \"dot\", text: \"Stream completed\"});\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 200,
+        "wires": [["completion-debug"]]
+    },
+    {
+        "id": "status-debug",
+        "type": "debug",
+        "z": "streaming-tab",
+        "name": "Status Updates",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1240,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "error-debug",
+        "type": "debug",
+        "z": "streaming-tab",
+        "name": "Error Messages",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1240,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "completion-debug",
+        "type": "debug",
+        "z": "streaming-tab",
+        "name": "Completion Status",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1260,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "manual-inject-testsrc",
+        "type": "inject",
+        "z": "streaming-tab",
+        "name": "Manual: Test Pattern",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "manual-start",
+        "payload": "{\"duration\":300,\"stream_key\":\"live/manual-test\",\"input_source\":\"testsrc\",\"bitrate\":\"1000k\",\"resolution\":\"1280x720\"}",
+        "payloadType": "json",
+        "x": 140,
+        "y": 200,
+        "wires": [["router-node"]]
+    },
+    {
+        "id": "manual-inject-file",
+        "type": "inject",
+        "z": "streaming-tab",
+        "name": "Manual: File Stream",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "manual-start",
+        "payload": "{\"duration\":600,\"stream_key\":\"live/manual-file\",\"input_source\":\"sample.mp4\",\"bitrate\":\"2000k\",\"resolution\":\"1920x1080\"}",
+        "payloadType": "json",
+        "x": 140,
+        "y": 240,
+        "wires": [["router-node"]]
+    },
+    {
+        "id": "manual-stop",
+        "type": "inject",
+        "z": "streaming-tab",
+        "name": "Manual: Stop All",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "stop",
+        "payload": "stop",
+        "payloadType": "str",
+        "x": 140,
+        "y": 280,
+        "wires": [["router-node"]]
+    }
+]

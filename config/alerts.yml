@@ -1,0 +1,92 @@
+# Prometheus Alert Rules
+# Documentation: https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+
+groups:
+  - name: streaming_server_alerts
+    rules:
+      # MediaMTX specific alerts
+      - alert: MediaMTXNoActivePublishers
+        expr: sum(mediamtx_paths_publishers_total) == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: mediamtx
+        annotations:
+          summary: "No active publishers on MediaMTX"
+          description: "MediaMTX has had no active publishers for more than 5 minutes"
+
+      - alert: MediaMTXHighReaderCount
+        expr: sum(mediamtx_paths_readers_total) > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: mediamtx
+        annotations:
+          summary: "High reader count on MediaMTX"
+          description: "MediaMTX has {{ $value }} active readers, which is above the threshold"
+
+      - alert: MediaMTXServerDown
+        expr: up{job="mediamtx"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: mediamtx
+        annotations:
+          summary: "MediaMTX server is down"
+          description: "MediaMTX server has been down for more than 1 minute"
+
+      # SRS specific alerts
+      - alert: SRSNoActiveStreams
+        expr: srs_streams == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: srs
+        annotations:
+          summary: "No active streams on SRS"
+          description: "SRS has had no active streams for more than 5 minutes"
+
+      - alert: SRSServerDown
+        expr: up{job="srs"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: srs
+        annotations:
+          summary: "SRS server is down"
+          description: "SRS server has been down for more than 1 minute"
+
+  - name: infrastructure_alerts
+    rules:
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: prometheus
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus has been down for more than 1 minute"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 80% for more than 5 minutes"
+
+  - name: custom_streaming_alerts
+    rules:
+      # Custom alert for practice scenarios
+      - alert: StreamingLabTestAlert
+        expr: absent(up{job="mediamtx"}) or absent(up{job="srs"})
+        for: 30s
+        labels:
+          severity: info
+          service: lab
+        annotations:
+          summary: "Streaming lab component missing"
+          description: "One of the streaming servers is not responding to health checks"
