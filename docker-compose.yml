@@ -1,0 +1,93 @@
+﻿version: '3.8'
+
+services:
+  # MediaMTX - RTMP Server with Prometheus metrics
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: mediamtx
+    ports:
+      - "1935:1935"    # RTMP
+      - "8554:8554"    # RTSP
+      - "8888:8888"    # HLS
+      - "8889:8889"    # WebRTC
+      - "9998:9998"    # Metrics endpoint
+    volumes:
+      - ./config/mediamtx.yml:/mediamtx.yml:ro
+    restart: unless-stopped
+    profiles:
+      - default
+      - mediamtx
+
+  # Prometheus - Metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    restart: unless-stopped
+
+  # Grafana - Visualization and dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+
+  # Node-RED - Scheduling and automation
+  nodered:
+    image: nodered/node-red:latest
+    container_name: nodered
+    ports:
+      - "1880:1880"
+    volumes:
+      - node-red-data:/data
+    environment:
+      - TZ=Europe/London
+    restart: unless-stopped
+
+  # Datadog Agent - Cloud monitoring
+  datadog:
+    image: gcr.io/datadoghq/agent:latest
+    container_name: datadog-agent
+    environment:
+      - DD_API_KEY=\
+      - DD_SITE=datadoghq.com
+      - DD_LOGS_ENABLED=true
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+      - DD_APM_ENABLED=true
+      - DD_PROCESS_AGENT_ENABLED=true
+      - DD_DOCKER_LABELS_AS_TAGS='{"*":"%%label%%"}'
+      - DD_TAGS=env:streaming-lab
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    restart: unless-stopped
+    profiles:
+      - datadog
+      - default
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  node-red-data:
+
+networks:
+  default:
+    name: streaming_lab
