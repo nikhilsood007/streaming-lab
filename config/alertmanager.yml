@@ -5,10 +5,10 @@ global:
   # Default SMTP configuration
   smtp_smarthost: 'localhost:587'
   smtp_from: 'alertmanager@streaming-lab.local'
-  
-  # Default template paths
-  templates:
-    - '/etc/alertmanager/templates/*.tmpl'
+
+# Templates - this is a TOP-LEVEL field, not under global
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
 
 # Route tree for alerts
 route:
@@ -49,21 +49,17 @@ receivers:
       - url: 'http://localhost:5001/webhook'
         send_resolved: true
 
-  # Critical alerts (would be email/Slack in production)
+  # Critical alerts (removed title and text - not supported in webhook_configs)
   - name: 'critical-alerts'
     webhook_configs:
       - url: 'http://localhost:5001/webhook/critical'
         send_resolved: true
-        title: 'CRITICAL: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
 
-  # Streaming service alerts
+  # Streaming service alerts (removed title and text)
   - name: 'streaming-alerts'
     webhook_configs:
       - url: 'http://localhost:5001/webhook/streaming'
         send_resolved: true
-        title: 'Streaming Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
 
   # Info level alerts
   - name: 'info-alerts'

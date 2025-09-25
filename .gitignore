@@ -1,2 +1,11 @@
 *.agdai
 MAlonzo/**
+echo "" >> .gitignore
+echo "# Environment variables" >> .gitignore
+echo ".env" >> .gitignore
+echo "*.env" >> .gitignore
+echo "" >> .gitignore
+echo "# Downloaded media files" >> .gitignore
+echo "*.mp4" >> .gitignore
+echo "*.webm" >> .gitignore
+echo "*.avi" >> .gitignore
