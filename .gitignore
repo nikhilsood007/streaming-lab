@@ -1,11 +1,6 @@
-*.agdai
-MAlonzo/**
 echo "" >> .gitignore
-echo "# Environment variables" >> .gitignore
+echo "# Environment files - NEVER COMMIT THESE" >> .gitignore
 echo ".env" >> .gitignore
+echo ".env.local" >> .gitignore
+echo ".env.production" >> .gitignore
 echo "*.env" >> .gitignore
-echo "" >> .gitignore
-echo "# Downloaded media files" >> .gitignore
-echo "*.mp4" >> .gitignore
-echo "*.webm" >> .gitignore
-echo "*.avi" >> .gitignore
