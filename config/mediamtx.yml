@@ -1,25 +1,60 @@
-rtmp: yes
+# MediaMTX configuration
+# Use only spaces, no tabs
+
+logLevel: info
+logDestinations: [stdout]
+logFile: ""
+
+# RTMP server
 rtmpAddress: :1935
+rtmpEncryption: "no"
+rtmpServerKey: ""
+rtmpServerCert: ""
 
-hls: yes  
+# HLS server  
 hlsAddress: :8888
+hlsEncryption: false
+hlsServerKey: ""
+hlsServerCert: ""
+hlsAlwaysRemux: false
+hlsVariant: lowLatency
+hlsSegmentCount: 3
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsSegmentMaxSize: 50M
+hlsDirectory: ""
 
-metrics: yes
+# WebRTC server
+webrtcAddress: :8889
+webrtcEncryption: false
+webrtcServerKey: ""
+webrtcServerCert: ""
+webrtcAllowOrigin: "*"
+webrtcTrustedProxies: []
+webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: :8189
+
+# API server
+api: true
+apiAddress: :9997
+
+# Metrics
+metrics: true
 metricsAddress: :9998
 
-# Disable authentication completely for streaming
-authMethod: internal
-authInternalUsers:
-  - user: any
-    pass: ""
-    ips: ['127.0.0.1', '::1', '172.18.0.0/16', '0.0.0.0/0']
-    permissions:
-      - action: api
-      - action: metrics
-      - action: publish
-        path: "~^.*"
-      - action: read
-        path: "~^.*"
-
+# Paths
 paths:
-  all: {}
+  all:
+    source: publisher
+    sourceProtocol: automatic
+    sourceAnyPortEnable: false
+    sourceFingerprint: ""
+    sourceOnDemand: false
+    sourceOnDemandStartTimeout: 10s
+    sourceOnDemandCloseAfter: 10s
+    sourceRedirect: ""
+    disablePublisherOverride: false
+    fallback: ""
+    srtReadPassphrase: ""
+    srtPublishPassphrase: ""
+    record: false
